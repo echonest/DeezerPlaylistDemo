@@ -1,1 +1,1 @@
-s3cmd sync  --acl-public . s3://static.echonest.com/DeezerDemo/
+s3cmd sync  --acl-public index.html s3://static.echonest.com/DeezerDemo/
