@@ -1,0 +1,185 @@
+<html>
+    <head>
+        <title> Deezer Demo </title>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+
+<style type="text/css">
+    body {
+        font-family: 'Open Sans', sans-serif;
+    }
+    #header {
+        margin-top:20px;
+        text-align:center;
+        width: 100%;
+    }
+
+    #footer {
+        margin-top:30px;
+        text-align:center;
+        width:100%;
+        font-size:10px;
+    }
+
+    .sdiv {
+        margin:30px;
+    }
+
+    .timg {
+        margin-right: 20px;
+        width:120px;
+        height:120px;
+    }
+
+    .title {
+        font-weight: bold;
+        color: green;
+        margin-bottom: 6px;
+    }
+
+    #playlist {
+        width:500px;
+        margin-left:auto;
+        margin-right:auto;
+    }
+
+    #info {
+        width:80%;
+        text-align:center;
+        height: 14px;
+        margin-left:auto;
+        margin-right:auto;
+        margin-top:20px;
+    }
+
+    .player {
+        margin-top:20px;
+    }
+</style>
+
+</head>
+
+<body>
+    <div id='header'> 
+        <h1> The Echo Nest + Deezer Playlist Demo</h1>
+        Enter an artist: <input id='artist-name' type='text'>
+    </div>
+    <div id="info"> </div>
+    <div id='playlist'> </div>
+    <div id='footer'> 
+        Powered by The Echo Nest and Deezer. See <a href='http://blog.echonest.com'> The Echo Nest blog</a> for more info.
+    </div>
+
+<script type="text/javascript">
+
+var DEEZER_DEMO_API_KEY='V3WFT6DHG0RJX4UD2';
+
+var audio
+jQuery.ajaxSettings.traditional = true;
+
+
+function createSongDiv(song) {
+    var songDiv = $("<div class='sdiv' id=" + song.id + "-div>");
+    return songDiv;
+}
+
+function addSongs(songs) {
+    var playlist = $("#playlist");
+
+    for (var i = 0; i < songs.length; i++) {
+        var div = createSongDiv(songs[i]);
+        playlist.append(div);
+        fetchDeezerTrack(songs[i], div);
+    }
+}
+
+
+function fetchDeezerTrack(song, div) {
+    if (song.tracks.length > 0) {
+        var tid = song.tracks[0].foreign_id.split(':')[2];
+        var url = 'http://api.deezer.com/2.0/track/' + tid + '?callback=?'
+
+        jQuery.getJSON(url, { output:'jsonp'},
+            function(data) {
+                var link = $("<a target='deezer'>").attr('href', data.link);
+                var cover = $("<img class='timg'>").attr('src', data.album.cover).attr("style", "float:left");
+                link.append(cover);
+                div.append(link);
+
+                var tdiv = $("<div class='tdiv'>");
+                tdiv.append( $("<div class='title'>").text(data.title));
+                tdiv.append( $("<div>").text(data.album.title));
+                tdiv.append( $("<div>").text(data.artist.name));
+                div.append(tdiv);
+                div.append(createPlayer(data.preview));
+                div.append($('<br clear="left">'));
+            }
+        );
+    }
+}
+
+function createPlayButton(audio) {
+    var button = $("<button>").text("preview");
+    button.click( 
+        function()  {
+            alert("Playing " + audio);
+        }
+    );
+    return button;
+}
+
+function createPlayer(audio) {
+    var player = $("<audio class='player' preload='none' controls='controls'>").attr("src", audio);
+    return player;
+}
+
+
+function info(msg) {
+    $("#info").text(msg);
+}
+
+function fetchPlaylist(artist) {
+    info("Getting playlist for " + artist);
+    $("#playlist").empty();
+    var url = 'http://developer.echonest.com/api/v4/playlist/static?callback=?'
+    jQuery.getJSON(url, 
+        {   artist:artist, 
+            type:'artist-radio', 
+            format:'jsonp', 
+            bucket: ['id:deezer', 'tracks'],
+            limit: true,
+            'api_key' : DEEZER_DEMO_API_KEY
+        },
+        function(data) {
+            info("");
+            if (data.response.status.code == 0) {
+                var songs = data.response.songs;
+                addSongs(songs);
+            } else {
+                info("Can't create a playlist for " + artist);
+            }
+        }
+    );
+}
+
+function initUI() {
+    $("#artist-name").keypress(
+        function(e) {
+            if(e.which == 13) {
+                var artist = $("#artist-name").val();
+                fetchPlaylist(artist);
+            }
+        }
+    );
+}
+
+
+$(document).ready(
+    function() {
+        initUI();
+    }
+);
+
+</script>
+</body>
+</html>
